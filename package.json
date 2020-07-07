@@ -1,0 +1,31 @@
+{
+  "name": "Project-Twitter",
+  "version": "1.0.0",
+  "description": "Backend-Twitter",
+  "main": "index.js",
+  "scripts": {
+    "start":"nodemon ./src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/allanJosueChavez/Twitter-Backend.git"
+  },
+  "author": "Allan Chávez",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/allanJosueChavez/Twitter-Backend/issues"
+  },
+  "homepage": "https://github.com/allanJosueChavez/Twitter-Backend#readme",
+  "dependencies": {
+    "bcrypt-nodejs": "0.0.3",
+    "body-parser": "^1.19.0",
+    "connect-multiparty": "^2.2.0",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "jwt-simple": "^0.5.6",
+    "moment": "^2.27.0",
+    "mongoose": "^5.9.22",
+    "nodemon": "^2.0.4"
+  }
+}
