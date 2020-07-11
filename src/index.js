@@ -1,14 +1,14 @@
 'use strict'
+const mongoose = require('mongoose');
 
-const mongoose = require ("mongoose")
-const { app, Listeneable_Host, Listeneable_Port } = require('./app');
-const actual_date = new Date();
+const { app, LISTENEABLE_HOST, LISTENEABLE_PORT } = require('./app');
+const ACTUAL_DATE = new Date();
 
-mongoose.Promise = global.Promise
+mongoose.Promise = global.Promise;
 
 function startExpressApp() {
-    app.listen(Listeneable_Port, Listeneable_Host, () => {
-        console.log(`[${actual_date}] => The Server is listening on http://${Listeneable_Host}:${Listeneable_Port}`);
+    app.listen(LISTENEABLE_PORT, LISTENEABLE_HOST, () => {
+        console.log(`[${ACTUAL_DATE}] ==> The server is listening on http://${LISTENEABLE_HOST}:${LISTENEABLE_PORT}`);
     })
 }
 
@@ -19,13 +19,13 @@ async function connectMongo() {
         process.on('SIGINT', async () => {
             try {
                 await mongoose.disconnect()
-                console.log(`[${actual_date}] ==> Server Closed`)
+                console.log(`[${ACTUAL_DATE}] ==> Server Closed`)
             } catch (error) {
-                console.error(`[${actual_date}] ==> ${error.message}`);
+                console.error(`[${ACTUAL_DATE}] ==> ${error.message}`);
             }
         })
     } catch (error) {
-        console.error(`[${actual_date}] ==> ${error.message}`);
+        console.error(`[${ACTUAL_DATE}] ==> ${error.message}`);
     }
 }
 

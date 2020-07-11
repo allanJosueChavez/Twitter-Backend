@@ -1,31 +1,40 @@
 'use strict'
 const express = require('express');
-const app = express();
-const bodyParser = require("body-Parser");
+const bodyParser = require('body-parser');
 const cors = require('cors');
 
 const COMMANDS_ROUTE = require('./routes/general');
 
-const Default_Port = 3000;
-const Default_Host = 'localhost';
-const Port = 'port';
-const Host = 'host';
+const app = express();
+const DEFAULT_PORT = 3000;
+const DEFAULT_HOST = 'localhost';
+const PORT = 'port';
+const HOST = 'host';
 
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cors());
 
-app.set(Port, process.env.Port || Default_Port);
-app.set(Host, process.env.Host || Default_Host);
+app.set(PORT, process.env.PORT || DEFAULT_PORT);
+app.set(HOST, process.env.HOST || DEFAULT_HOST);
 
 app.use('/api', COMMANDS_ROUTE);
-
-
-const Listeneable_Port = app.get(Port);
-const Listeneable_Host = app.get(Host);
+app.use(( res, next) => {
+    res.header("Acces-Control-Allow-Origin", "*");
+    res.header(
+      "Acces-Control-Allow-Headers",
+      "Authorization, X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Acces-Control-Allow-Request-Method"
+    );
+    res.header("Acces-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
+    res.header("Allow", "GET, POST, OPTIONS, PUT, DELETE");
+  
+    next();
+  });
+const LISTENEABLE_PORT = app.get(PORT);
+const LISTENEABLE_HOST = app.get(HOST);
 
 module.exports = { 
     app, 
-    Listeneable_Host, 
-    Listeneable_Port 
+    LISTENEABLE_HOST, 
+    LISTENEABLE_PORT 
 }
