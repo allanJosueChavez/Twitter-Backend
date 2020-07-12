@@ -40,9 +40,9 @@ async function commands(req, res) {
                 }
             })
             break;
+            
 
         case "REGISTER":
-
             if (data[1] && data[2]) {
                 user.user_name = data[1];
                 user.password = data[2];
@@ -72,6 +72,7 @@ async function commands(req, res) {
             }
             break;
 
+
         case "EDIT":
             var userId = data[1];
             if (data[2] && data[3]) {
@@ -92,30 +93,32 @@ async function commands(req, res) {
                 return res.status(200).send({ message: "The data cannot be null, try again please." })
             }
             break;
-        
-            case "DELETE_USER":
-                if (userId != req.user.sub) {
-                    res.status(500).send({ message: "You don't have permissions for delete this usert." })
-                    console.log("You don't have permissions for do this action.");
-                } else {
-                    User.findByIdAndDelete(data[1], (err, userDeleted) => {
-                        console.log(userDeleted);
-                        if (err) return res.status(404).send({ message: "This user doesn't exist." });
-                        if (!userDeleted) return res.status(404).send({ message: "User not found." });
-                        return res.status(200).send({ userDeleted });
-                    });
-                }
-                break;        
+
+
+        case "DELETE_USER":
+            var username = data[1];
+            if (username != req.user.user_name) {
+                res.status(500).send({ message: "You don't have permissions for delete this user." })
+                console.log("You don't have permissions for do this action.");
+            } else {
+                User.findOneAndDelete({ user_name: req.user.user_name }, (err, userDeleted) => {
+                    if (err) return res.status(404).send({ message: "This user doesn't exist." });
+                    if (!userDeleted) return res.status(404).send({ message: "User not found." });
+                    return res.status(200).send({ userDeleted });
+                });
+            }
+            break;
+
 
         case "PROFILE":
-            var userId = data[1];
-            if (userId != req.user.sub) {
+            var username = data[1];
+            if (username != req.user.user_name) {
                 res.status(500).send({ message: "You don't have permissions for do this action." })
                 console.log("You don't have permissions for do this action.");
             } else {
-                User.findById(data[1], (err, user) => {
-                    if (err) return res.status(500).send({ message: "The user wasn't found." })
-                    if (!user) return res.status(404).send({ message: "An error has ocurred." })
+                User.findOne({ user_name: req.user.user_name }, (err, user) => {
+                    if (err) return res.status(404).send({ message: "An error has ocurred." })
+                    if (!user) return res.status(500).send({ message: "The user wasn't found." })
                     return res.status(200).send({ user })
                 })
             }
@@ -148,45 +151,48 @@ async function commands(req, res) {
 
 
         case "DELETE_TWEET":
-            if (userId != req.user.sub) {
-                res.status(500).send({ message: "You don't have permissions for delete this tweet." })
-                console.log("You don't have permissions for do this action.");
-            } else {
-                Tweet.findByIdAndDelete(data[1], (err, tweetDeleted) => {
-                    console.log(tweetDeleted);
-                    if (err) return res.status(404).send({ message: "This tweet doesn't exist." });
-                    if (!tweetDeleted) return res.status(404).send({ message: "Tweet not found." });
-                    return res.status(200).send({ tweetDeleted });
-                });
-            }
+            Tweet.find({ user: req.user.sub }, (err, permissions) => {
+                if (!permissions) {
+                    res.status(500).send({ message: "You don't have permissions for delete this tweet." })
+                    console.log("You don't have permissions for do this action.");
+                } else {
+                    Tweet.findByIdAndDelete(data[1], (err, tweetDeleted) => {
+                        if (err) return res.status(404).send({ message: "This tweet doesn't exist." });
+                        if (!tweetDeleted) return res.status(404).send({ message: "Tweet not found." });
+                        return res.status(200).send({ tweetDeleted });
+                    });
+                }
+            })
             break;
 
 
         case "EDIT_TWEET":
-            if (userId != req.user.sub) {
-                res.status(500).send({ message: "You don't have permissions for edit this tweet." })
-                console.log("You don't have permissions for do this action.");
-            } else {
-                if (data[2] != null) {
-                    var content = data[2];
-                    var newData = { content };
-                    // user.content = newContent;
-                    Tweet.findByIdAndUpdate(data[1], newData, { new: true }, (err, tweetUpdated) => {
-                        if (err) return res.status(500).send({ message: "The tweet wasn't found." })
-                        if (!user) return res.status(404).send({ message: "An error has ocurred." })
-                        return res.status(200).send({ tweetUpdated })
-                    })
+            Tweet.find({ user: req.user.sub }, (err, permissions) => {
+                if (!permissions) {
+                    res.status(500).send({ message: "You don't have permissions for delete this tweet." })
+                    console.log("You don't have permissions for do this action.");
                 } else {
-                    return res.status(500).send({ message: "The content of the tweet cannot be empty." })
+                    if (data[2] != null) {
+                        var content = data[2];
+                        var newData = { content };
+                        // user.content = newContent;
+                        Tweet.findByIdAndUpdate(data[1], newData, { new: true }, (err, tweetUpdated) => {
+                            if (err) return res.status(500).send({ message: "The tweet wasn't found." })
+                            if (!user) return res.status(404).send({ message: "An error has ocurred." })
+                            return res.status(200).send({ tweetUpdated })
+                        })
+                    } else {
+                        return res.status(500).send({ message: "The content of the tweet cannot be empty." })
+                    }
                 }
-            }
+            })
             break;
 
 
         case "VIEW_TWEETS":
             var my_userId = req.user.sub;
             var username = data[1];
-            User.findOne(({ user_name: username }), (user_existing) => {
+            User.findOne({ user_name: username }, (err, user_existing) => {
                 if (!user_existing) {
                     return res.status(404).send({ message: "The user doesn't exist, please try again." })
                 } else {
@@ -200,7 +206,7 @@ async function commands(req, res) {
             break;
 
 
-        case "FOLLOW":          
+        case "FOLLOW":
             var username = data[1];
             var my_userId = req.user.sub;
 
@@ -210,10 +216,10 @@ async function commands(req, res) {
                     if (!user || username == req.user.user_name) {
                         return res.status(404).send({ message: "The user doesn't exist. Please Try again" })
                     } else {
-                        User.findOneAndUpdate({ user_name: username }, { $addToSet: { followers: ({ follower: req.user.sub }, { username: req.user.user_name }) } }, { new: true }, async (err, NewFollow) => {
+                        User.findOneAndUpdate({ user_name: username }, { $addToSet: { followers: { follower: req.user.sub, username: req.user.user_name } } }, { new: true }, async (err, NewFollow) => {
                             console.log("Now you follow this user.");
                         })
-                        User.findByIdAndUpdate(my_userId, { $addToSet: { followed: { followed: username } } }, { new: true }, (err, Followed) => {
+                        User.findByIdAndUpdate(my_userId, { $addToSet: { followed: { followed: user._id, username: username } } }, { new: true }, (err, Followed) => {
                             return res.status(200).send({ message: "Now you follow this user.", Followed })
                         })
                     }
@@ -235,11 +241,11 @@ async function commands(req, res) {
                 if (!user || username == req.user.user_name) {
                     return res.status(404).send({ message: "The user doesn't exist. Please Try again" })
                 } else {
-                    User.findByIdAndUpdate(my_userId, { $pull: { followed: { followed: username } } }, { new: true }, (userUnfollowed) => {
+                    User.findByIdAndUpdate(my_userId, { $pull: { followed: { username: username } } }, { new: true }, (err, userUnfollowed) => {
                         //  if (!followerAdded) return res.status(404).send({ message: "You don't follow this user."  })
                         return res.status(200).send({ message: "You have stopped following this user." })
                     })
-                    User.findOneAndUpdate({ user_name: username }, { $pull: { followers: { follower: my_userId } } }, { new: true }, (followerAdded) => {
+                    User.findOneAndUpdate({ user_name: username }, { $pull: { followers: { follower: my_userId } } }, { new: true }, (err, followerAdded) => {
                         console.log("You have stopped following this user.");
                     })
                 }
@@ -247,13 +253,12 @@ async function commands(req, res) {
             break;
 
 
-
         default:
             res.status(500).send({ message: 'Invalid option, try again please.' });
             break;
     }
-
 }
+
 module.exports = {
     commands
 }

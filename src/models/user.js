@@ -11,7 +11,8 @@ const schema = Schema({
       username: {type:String}
     }], 
     followed:[{
-       followed: {type: String}
+      followed: {type: Schema.ObjectId, ref:'user', require:true},
+      username: {type: String}
     
     }],
     phone: {type:Number},
