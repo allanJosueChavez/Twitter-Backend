@@ -1,7 +1,7 @@
 'use strict'
 
 const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+const Schema = mongoose.Schema; 
 
 const schema = Schema({ 
     user_name: {type: String, require: true},
@@ -16,7 +16,7 @@ const schema = Schema({
     
     }],
     phone: {type:Number},
-    email: {type:String}
+    email: {type:String},
   /*  tweets: [
         {
             idTweet: {type: Schema.ObjectId, ref: 'user'},
@@ -24,6 +24,10 @@ const schema = Schema({
             //privacy:String
         }
     ]*/
+    retweet: {
+      comment: {type: String},
+      tweet: {type: Object }
+    }
 });
 
 

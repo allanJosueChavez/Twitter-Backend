@@ -251,8 +251,177 @@ async function commands(req, res) {
                 }
             })
             break;
+        
+        case "FOLLOW":
+            var username = data[1];
+            var my_userId = req.user.sub;
 
+            try {
+                User.findOne({ user_name: username }, (err, user) => {
+                    if (err) return res.status(500).send({ message: "The user wasn't found. Try again with a user existing please." })
+                    if (!user || username == req.user.user_name) {
+                        return res.status(404).send({ message: "The user doesn't exist. Please Try again" })
+                    } else {
+                        User.findOneAndUpdate({ user_name: username }, { $addToSet: { followers: { follower: req.user.sub, username: req.user.user_name } } }, { new: true }, async (err, NewFollow) => {
+                            console.log("Now you follow this user.");
+                        })
+                        User.findByIdAndUpdate(my_userId, { $addToSet: { followed: { followed: user._id, username: username } } }, { new: true }, (err, Followed) => {
+                            return res.status(200).send({ message: "Now you follow this user.", Followed })
+                        })
+                    }
+                })
 
+            } catch (error) {
+                // console.error(error);
+                res.status(500).send({ message: error.message });
+                console.error("An error has occurred. Try again please.");
+            }
+            break;   
+        
+        case "LIKE_TWEET":
+            var idTweet = data[1];
+            var my_userId = req.user.sub;
+            
+                try {
+                    
+                    //Function to remove duplicate data.
+                        // Tweet.find({$match:{"_id": idTweet}} ,{ $unwind: '$like'},{"like.user" : req.user.sub}, (err,tweet) =>{
+                        // if (tweet) {
+                        //     console.log(tweet);
+                        //     return res.status(404).send({ message: "You cannot give 'like' twice." })
+                        // } else{
+                        //     console.log(tweet);
+                Tweet.findById(idTweet, (err, tweet) => {
+                if (err) return res.status(500).send({ message: "The tweet wasn't found. Try again with a tweet existing please." })
+                if (!tweet) {
+                        return res.status(404).send({ message: "The tweet doesn't exist. Please Try again" })
+                    } else {                               
+                                Tweet.aggregate([{ $unwind: "$like" },{$count : "numLikes"}], function (err, count) {  
+                                    Tweet.findByIdAndUpdate(idTweet, { $pull: { numLikes: {$ne : count}} }, { new: true }, (err, New) => {
+                                    }) 
+                                    Tweet.findByIdAndUpdate(idTweet, { $addToSet: { numLikes: count} }, { new: true }, (err, New) => {
+                                    })  
+                                    })                       
+                    
+                                Tweet.findByIdAndUpdate(idTweet, { $addToSet: { like: { user: req.user.sub, username: req.user.user_name } }}, { new: true }, async (err, Liked) => {
+                                    console.log("You liked this tweet.");
+                                    return res.status(200).send({ message: "You liked this tweet.", Liked })
+                                })     
+                            }
+                        })
+                        //The problem with the meter still needs to be fixed.
+                //     }
+                // })
+    
+                } catch (error) {
+                    // console.error(error);
+                    res.status(500).send({ message: error.message });
+                    console.error("An error has occurred. Try again please.");
+                }
+
+                
+                break;
+
+                case "DISLIKE_TWEET":
+                    var idTweet = data[1];
+                    var my_userId = req.user.sub;
+                        try {
+                        Tweet.findById(idTweet, (err, tweet) => {
+                        if (err) return res.status(500).send({ message: "The tweet wasn't found. Try again with a tweet existing please." })
+                        if (!tweet) {
+                                return res.status(404).send({ message: "The tweet doesn't exist. Please Try again" })
+                            } else {
+                            
+                                // Tweet.find({_id: idTweet},{"like.user" : {$ne :req.user.sub }  } , (err,tweet) =>{
+                                //     if (err) return res.status(500).send({ message: "An error has occurred." })
+                                //     if (tweet) {
+                                //             return res.status(404).send({ message: "You cannot give 'dislike' to a tweet that hasn´t your like." })
+                                //     } else {
+                                        Tweet.findByIdAndUpdate(idTweet, { $pull: { like: { user: req.user.sub, username: req.user.user_name } } }, { new: true }, async (err, Liked) => {
+                                            if(err) return res.status(500)({message: "You don't give dislike to this tweet, because it hasn't your like." })
+                                                console.log("You disliked this tweet.");
+                                                return res.status(200).send({ message: "You liked this tweet.", Liked })
+                                            })
+                                    // }
+                                    // })
+                                
+                                }
+                            })
+            
+                        } catch (error) {
+                            // console.error(error);
+                            res.status(500).send({ message: error.message });
+                            console.error("An error has occurred. Try again please.");
+                        }
+                        break;
+        case "REPLY_TWEET":
+            var idTweet = data[1];
+            var response = data[2]
+            var my_userId = req.user.sub;
+                try {
+                Tweet.findById(idTweet, (err, tweet) => {
+                if (err) return res.status(500).send({ message: "The tweet wasn't found. Try again with a tweet existing please." })
+                if (!tweet) {
+                        return res.status(404).send({ message: "The tweet doesn't exist. Please Try again" })
+                    } else {
+                          //The problem with the meter still needs to be fixed.
+                          Tweet.aggregate([{ $unwind: "$responses" },{$count : "numResponses"}], function (err, count) {  
+                            Tweet.findByIdAndUpdate(idTweet, { $pull: { numResponses: {$ne : count}} }, { new: true }, (err, New) => {
+                            }) 
+                            Tweet.findByIdAndUpdate(idTweet, { $addToSet: { numResponses: count} }, { new: true }, (err, New) => {
+                            })  
+                            })   
+
+                        Tweet.findByIdAndUpdate(idTweet, { $push: { responses: { user: my_userId, username: req.user.user_name, response : response } } }, { new: true }, async (err, replied) => {
+                            if(err) return res.status(500)({message: "An error has occurred." })
+                            console.log("You replied this tweet.");
+                            return res.status(200).send({ message: "You liked this tweet.", replied})
+                        })
+                        }
+                    })
+                } catch (error) {
+                    // console.error(error);
+                    res.status(500).send({ message: error.message });
+                    console.error("An error has occurred. Try again please.");
+                }
+        break;
+
+        case "RETWEET":
+            var idTweet = data[1];
+            var comment = data[2]
+            var my_userId = req.user.sub;
+                try {
+                Tweet.findById(idTweet, (err, tweet) => {
+                if (err) return res.status(500).send({ message: "The tweet wasn't found. Try again with a tweet existing please." })
+                if (!tweet) {
+                        return res.status(404).send({ message: "The tweet doesn't exist. Please Try again" })
+                    } else{
+                        //The problem with the meter still needs to be fixed.
+                        User.aggregate([{ $unwind: "$retweet" },{$count : "numRetweets"}], function (err, count) {  
+                            Tweet.findByIdAndUpdate(idTweet, { $pull: { numRetweets: {$ne : count}} }, { new: true }, (err, New) => {
+                            }) 
+                            Tweet.findByIdAndUpdate(idTweet, { $addToSet: { numRetweets: count} }, { new: true }, (err, New) => {
+                            })  
+                            }) 
+
+                        User.findByIdAndUpdate(my_userId, { $pull: { retweet: { tweet :tweet } } }, { new: true }, async (err, retweet) => {
+                            if(err) return res.status(500)({message: "Oops! An error has occurred." })
+                            // return res.status(200).send(retweet)    
+                        })
+                        User.findByIdAndUpdate(my_userId,{ $addToSet: { retweet: { comment: comment, tweet: tweet} } }, { new: true}, async (err, retweet) => {
+                            // if(retweet.tweet._id == idTweet) return res.status(500)({message: "An error has occurred." })
+                            if(err) return res.status(500)({message: "An error has occurred." })
+                            console.log("You have retweeted this tweet.");
+                            return res.status(200).send(retweet)
+                        })
+                        }
+                    })
+                } catch (error) {
+                    // console.error(error);
+                    res.status(500).send({ message: error.message });
+                    console.error("An error has occurred. Try again please.");
+                }
+        break;
         default:
             res.status(500).send({ message: 'Invalid option, try again please.' });
             break;
